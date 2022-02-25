@@ -26,41 +26,24 @@ struct k_linked_list {
 };
 
 
-int linked_list(void)
+int linked_list(int *int_str_array, int count)
 {
 
 	int i = 0;
-	int num = 0;
+	//int num = 0;
 	struct k_linked_list *nodes, *current_node, *next_node;
 
 	LIST_HEAD(head_list);
 
-	while(int_str[i] != '\0')
+	while(i < count)
 	{
-		if (int_str[i] != ' ')
-		{
+		nodes = kmalloc(sizeof(*nodes), GFP_KERNEL);
+		nodes->data = int_str_array[i++];
+		INIT_LIST_HEAD(&nodes->list);
+		list_add_tail(&nodes->list, &head_list);
+		printk(KERN_INFO "Elemented inserted: %d\n", nodes->data);
 			
-			int j = int_str[i] - '0';
-			num = num * 10 + j;
-		}
-		else
-		{
-			nodes = kmalloc(sizeof(*nodes), GFP_KERNEL);
-			nodes->data = num;
-			INIT_LIST_HEAD(&nodes->list);
-			list_add_tail(&nodes->list, &head_list);
-			
-			num = 0;
-		}
-
-		i++;
-
 	}
-
-	nodes = kmalloc(sizeof(*nodes), GFP_KERNEL);
-	nodes->data = num;
-	INIT_LIST_HEAD(&nodes->list);
-	list_add_tail(&nodes->list,&head_list);
 
 
 	/* printing linked list nodes */
@@ -72,7 +55,7 @@ int linked_list(void)
 
 
 	/* destruct linked list and free its content */
-	printk(KERN_INFO "Removing nodes linked list");
+	printk(KERN_INFO "Removing nodes from linked list");
 	list_for_each_entry_safe(current_node, next_node, &head_list, list)
 	{
 		printk(KERN_INFO "Removing node from linked list: %d\n", current_node->data);
@@ -99,48 +82,29 @@ int hash_table(int *int_str_array, int count)
 {
 
 	int i = 0;
-	int i1 = 0;
-	int num = 0;
-	int num1 = 0;
+	int key;
 
 	struct hash_table *nodes, *current_node;
 	unsigned bucket;
 
-	while(int_str[i] != '\0')
+	
+	while (i < count)
 	{
-		if (int_str[i] != ' ')
+
+		nodes = (struct hash_table*)kmalloc(sizeof(struct hash_table), GFP_KERNEL);
+		if(!nodes)
 		{
-			
-			int j = int_str[i] - '0';
-			num = num * 10 + j;
+			printk(KERN_INFO "memory not allocated\n");
+			return -ENOMEM;
 		}
-		else
-		{
-			nodes = (struct hash_table*)kmalloc(sizeof(struct hash_table), GFP_KERNEL);
-			if(!nodes)
-			{
-				printk(KERN_INFO "memory not allocated\n");
-				return -ENOMEM;
-			}
-			nodes->data = num;
-			hash_add(hashtable, &nodes->hash, num);
-			
-			num = 0;
-		}
-		i++;
+		nodes->data = int_str_array[i++];
+		key = nodes->data;
+		hash_add(hashtable, &nodes->hash, key);
+		printk(KERN_INFO "Element inserted: %d\n", nodes->data);
 
 	}
+	
 
-
-	nodes = (struct hash_table*)kmalloc(sizeof(struct hash_table), GFP_KERNEL);
-	if(!nodes)
-	{
-		printk(KERN_INFO "memory not allocated\n");
-		return -ENOMEM;
-	}
-			
-	nodes->data = num;
-	hash_add(hashtable, &nodes->hash, num);
 	
 	printk(KERN_INFO "Iterating over a hash table and printing out elements\n");
 	hash_for_each(hashtable, bucket, current_node, hash)
@@ -148,58 +112,25 @@ int hash_table(int *int_str_array, int count)
 		printk(KERN_INFO "Hash table value is: %d\n", current_node->data);
 	}
 
+
+
 	/* look up inserted integers */
 	printk(KERN_INFO "Look up the inserted numbers & print them out\n");
-
-	while(int_str[i1] != '\0')
+	
+	for(i=0; i<count; i++)
 	{
-		if (int_str[i1] != ' ')
+		hash_for_each_possible(hashtable, current_node, hash, int_str_array[i])
 		{
-			
-			int j = int_str[i1] - '0';
-			num1 = num1 * 10 + j;
-		}
-		else
-		{
-
-			nodes = (struct hash_table*)kmalloc(sizeof(struct hash_table), GFP_KERNEL);
-			if(!nodes)
+			if (current_node->data == int_str_array[i])
 			{
-				printk(KERN_INFO "memory not allocated\n");
-				return -ENOMEM;
+				printk(KERN_INFO "Looked up data is: %d\n", current_node->data);
 			}
-			
-			hash_for_each_possible(hashtable, current_node, hash, num1)
-			{
-				if (current_node->data == num1)
-				{
-					printk(KERN_INFO "Looked up data is: %d\n", current_node->data);
-				}
-			}
-			
-			num1 = 0;
-		}
-		i1++;
-
-	}
-
-
-	nodes = (struct hash_table*)kmalloc(sizeof(struct hash_table), GFP_KERNEL);
-	if(!nodes)
-	{
-		printk(KERN_INFO "memory not allocated\n");
-		return -ENOMEM;
-	}
-			
-	hash_for_each_possible(hashtable, current_node, hash, num1)
-	{
-		if (current_node->data == num1)
-		{
-			printk(KERN_INFO "Looked up data is: %d\n", current_node->data);
+		
 		}
 	}
 
 
+	
 	/* remove all inserted numbers in hash table */
 	printk(KERN_INFO "Removing all inserted integers from hash table\n");
 	for(i = 0; i < count; i++)
@@ -221,27 +152,7 @@ int hash_table(int *int_str_array, int count)
 }
 
 
-/* remove all inserted numbers in hash table */
-int remove_hashtable(int *int_str_array, int count)
-{
-	int i;
-	struct hash_table *current_node;
 
-	for(i = 0; i < count; i++)
-	{
-		hash_for_each_possible(hashtable, current_node, hash, int_str_array[i])
-		{
-			if (current_node->data == int_str_array[i])
-			{
-				printk(KERN_INFO "Removing node from hash table : %d\n", current_node->data);
-				hash_del(&current_node->hash);
-				kfree(current_node);
-			}
-		}
-	}
-	return 0;
-
-}
 
 /* red-black trees implementation */
 struct rb_tree_root{
@@ -259,7 +170,7 @@ void insert_rb_node(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 {
 	struct rb_node **link = &rb_tree_root->root_node.rb_node;
 	struct rb_node *parent = NULL;
-	struct rb_tree *current_node;
+	struct rb_tree *current_node = NULL;
 
 	while(*link)
 	{
@@ -281,15 +192,16 @@ void insert_rb_node(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 	// rebalancing the rbtree if necessary 
 	rb_insert_color(&node->nodes, &rb_tree_root->root_node);
 
-	printk(KERN_INFO "Inserted into Red Black tree : %d\n", node->data);
+	printk(KERN_INFO "Inserted element : %d\n", node->data);
 }
+
 
 /* look up for node in red black tree */
 void search_rb_tree(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 {
 	struct rb_node **link = &rb_tree_root->root_node.rb_node;
 	struct rb_node *parent = NULL;
-	struct rb_tree *current_node;
+	struct rb_tree *current_node = NULL;
 
 	while(*link)
 	{
@@ -305,7 +217,7 @@ void search_rb_tree(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 		}
 		else
 		{
-			printk(KERN_INFO "found successfully in red black tree - %d\n", current_node->data);
+			printk(KERN_INFO "Looked up data is: %d\n", current_node->data);
 			return;
 		}
 
@@ -315,20 +227,23 @@ void search_rb_tree(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 
 }
 
+
 //deleting red bklack tree
 void remove_rb_tree(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 {
 	rb_erase(&node->nodes, &rb_tree_root->root_node);
 	kfree(node);
-	printk(KERN_INFO "Removed %d node from the red black tree\n", node->data);
+	printk(KERN_INFO "Removing node from red black tree: %d\n", node->data);
 }
+
 
 int red_black_tree(int *int_str_array, int count)
 {
 	struct rb_tree_root *rb_tree_root;
 	struct rb_tree *node;
 	int i;
-	rb_tree_root = kmalloc(sizeof(*rb_tree_root), GFP_ATOMIC);
+
+	rb_tree_root = (struct rb_tree_root *)kzalloc(sizeof(struct rb_tree_root), GFP_KERNEL);
 	if(!rb_tree_root)
 	{
 		printk("memory not allocated");
@@ -336,20 +251,23 @@ int red_black_tree(int *int_str_array, int count)
 	}
 	rb_tree_root->root_node = RB_ROOT;
 
-	//insert
+	//insert	
+	printk(KERN_INFO "Inserting elements into red black tree\n");
 	for(i = 0; i<count; i++)
 	{
-		node = kmalloc(sizeof(*node), GFP_ATOMIC);
+		node = (struct rb_tree *)kzalloc(sizeof(struct rb_tree), GFP_KERNEL);
 		if(!node)
 		{
-			printk("memory not alloated !!");
+			printk("memory is not alloated !!");
 			return -ENOMEM;
 		}
+
 		node->data = int_str_array[i];
 		insert_rb_node(rb_tree_root, node);
 	}
 
 	//look up
+	printk(KERN_INFO "Iterating over a red black tree\n");
 	for(i = 0; i<count; i++)
 	{
 		node->data = int_str_array[i];
@@ -358,12 +276,14 @@ int red_black_tree(int *int_str_array, int count)
 	}
 
 	//delete
+	printk(KERN_INFO "Removing nodes from red black tree\n");
 	for(i=0; i<count; i++)
 	{
 		node->data = int_str_array[i];
 		remove_rb_tree(rb_tree_root, node);
 
 	}
+
 	return 0;
 }
 
@@ -628,9 +548,8 @@ static int __init kds_init(void)
 	int_str_array[l] = num;
 
 
-	//linked_list();
+	//linked_list(int_str_array, count);
 	//hash_table(int_str_array, count);
-	//remove_hashtable(int_str_array, count);
 	red_black_tree(int_str_array, count);
 	//radix_tree(int_str_array, count);
 	//xarray(int_str_array, count);
