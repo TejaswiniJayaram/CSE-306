@@ -41,7 +41,7 @@ int linked_list(int *int_str_array, int count)
 		nodes->data = int_str_array[i++];
 		INIT_LIST_HEAD(&nodes->list);
 		list_add_tail(&nodes->list, &head_list);
-		printk(KERN_INFO "Elemented inserted: %d\n", nodes->data);
+		printk(KERN_INFO "Inserted element: %d\n", nodes->data);
 			
 	}
 
@@ -100,18 +100,16 @@ int hash_table(int *int_str_array, int count)
 		nodes->data = int_str_array[i++];
 		key = nodes->data;
 		hash_add(hashtable, &nodes->hash, key);
-		printk(KERN_INFO "Element inserted: %d\n", nodes->data);
+		printk(KERN_INFO "Inserted element: %d\n", nodes->data);
 
 	}
 	
-
 	
 	printk(KERN_INFO "Iterating over a hash table and printing out elements\n");
 	hash_for_each(hashtable, bucket, current_node, hash)
 	{
 		printk(KERN_INFO "Hash table value is: %d\n", current_node->data);
 	}
-
 
 
 	/* look up inserted integers */
@@ -153,7 +151,6 @@ int hash_table(int *int_str_array, int count)
 
 
 
-
 /* red-black trees implementation */
 struct rb_tree_root{
 	struct rb_root root_node;
@@ -170,7 +167,7 @@ void insert_rb_node(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 {
 	struct rb_node **link = &rb_tree_root->root_node.rb_node;
 	struct rb_node *parent = NULL;
-	struct rb_tree *current_node = NULL;
+	struct rb_tree *current_node;
 
 	while(*link)
 	{
@@ -201,25 +198,34 @@ void search_rb_tree(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 {
 	struct rb_node **link = &rb_tree_root->root_node.rb_node;
 	struct rb_node *parent = NULL;
-	struct rb_tree *current_node = NULL;
+	struct rb_tree *current_node;
 
 	while(*link)
 	{
 		parent = *link;
 		current_node = rb_entry(parent, struct rb_tree, nodes);
-		if(node->data < current_node->data)
-		{
-			link = &parent->rb_left;
-		}
-		else if (node->data > current_node->data)
-		{
-			link = &parent->rb_right;
-		}
-		else
+
+		if (node->data == current_node->data)
 		{
 			printk(KERN_INFO "Looked up data is: %d\n", current_node->data);
 			return;
+
 		}
+
+		else if (node->data < current_node->data)
+		{
+			link = &parent->rb_left;
+		}
+
+		else 
+		{
+			link = &parent->rb_right;
+		}
+		//else
+		//{
+		//	printk(KERN_INFO "Looked up data is: %d\n", current_node->data);
+		//	return;
+		//}
 
 	}
 	printk(KERN_INFO "%d not found\n", node->data);
@@ -232,7 +238,7 @@ void search_rb_tree(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 void remove_rb_tree(struct rb_tree_root *rb_tree_root, struct rb_tree *node)
 {
 	rb_erase(&node->nodes, &rb_tree_root->root_node);
-	kfree(node);
+	//kfree(node);
 	printk(KERN_INFO "Removing node from red black tree: %d\n", node->data);
 }
 
@@ -243,7 +249,8 @@ int red_black_tree(int *int_str_array, int count)
 	struct rb_tree *node;
 	int i;
 
-	rb_tree_root = (struct rb_tree_root *)kzalloc(sizeof(struct rb_tree_root), GFP_KERNEL);
+	rb_tree_root = (struct rb_tree_root *)kmalloc(sizeof(struct rb_tree_root), GFP_KERNEL);
+
 	if(!rb_tree_root)
 	{
 		printk("memory not allocated");
@@ -255,7 +262,7 @@ int red_black_tree(int *int_str_array, int count)
 	printk(KERN_INFO "Inserting elements into red black tree\n");
 	for(i = 0; i<count; i++)
 	{
-		node = (struct rb_tree *)kzalloc(sizeof(struct rb_tree), GFP_KERNEL);
+		node = (struct rb_tree *)kmalloc(sizeof(struct rb_tree), GFP_KERNEL);
 		if(!node)
 		{
 			printk("memory is not alloated !!");
@@ -276,6 +283,7 @@ int red_black_tree(int *int_str_array, int count)
 	}
 
 	//delete
+	
 	printk(KERN_INFO "Removing nodes from red black tree\n");
 	for(i=0; i<count; i++)
 	{
@@ -283,6 +291,7 @@ int red_black_tree(int *int_str_array, int count)
 		remove_rb_tree(rb_tree_root, node);
 
 	}
+	
 
 	return 0;
 }
@@ -298,8 +307,9 @@ int radix_tree(int *int_str_array, int count)
 	struct radix_tree_root *root_node;
 	struct radix_tree_data **elements;
 	struct radix_tree_data *radix_data;
-	unsigned long key;
+	unsigned long value;
 	int i, number;
+
 	root_node = kmalloc(sizeof(*root_node), GFP_ATOMIC);
 	if(!root_node)
 	{
@@ -311,60 +321,64 @@ int radix_tree(int *int_str_array, int count)
 	INIT_RADIX_TREE(root_node, GFP_ATOMIC);
 
 	//insert
+	printk(KERN_INFO "Inserting elements into radix\n");
 	for(i=0; i<count; i++)
 	{
-		key = int_str_array[i];
+		value = int_str_array[i];
 		radix_data = kmalloc(sizeof(*radix_data), GFP_ATOMIC);
 		if(!radix_data)
 		{
-			printk("memory not allocated");
+			printk("memory is not allocated");
 			return -ENOMEM;
 		}
 		radix_data->data = int_str_array[i];
-		number = radix_tree_insert(root_node, key, radix_data);
-		printk(KERN_INFO "Inserted into Radix - %d\n", int_str_array[i]);
+		radix_tree_insert(root_node, value, radix_data);
+		printk(KERN_INFO "Inserted element: %d\n", radix_data->data);
 	}
 
 	
 	//lookup
 	for(i=0; i<count; i++)
 	{
-		key = int_str_array[i];
-		radix_data = radix_tree_lookup(root_node, key);
-		printk(KERN_INFO "Lookup was succesful - %d\n", radix_data->data);
+		value = int_str_array[i];
+		radix_data = radix_tree_lookup(root_node, value);
+		printk(KERN_INFO "Looked up data is: %d\n", radix_data->data);
 	}
 	
 	//tag
+	printk(KERN_INFO "Tagging odd numbers\n");
 	for(i=0; i<count; i++)
 	{
-		key = int_str_array[i];
-		if(key % 2 != 0)
+		value = int_str_array[i];
+		if(value % 2 != 0)
 		{
-			radix_tree_tag_set(root_node, key, 1);
-			printk(KERN_INFO "Tagging element - %d\n", int_str_array[i]);
+			radix_tree_tag_set(root_node, value, 1);
+			printk(KERN_INFO "Tagged element is: %d\n", int_str_array[i]);
 		}
 	}
 	
 	//lookup for tagged elements
+	printk(KERN_INFO "Look up for tagged elements\n");
 	elements = kmalloc(count * sizeof(radix_data), GFP_ATOMIC);
 	if(!elements)
 	{
-		printk("memory not allocated");
+		printk("memory is not allocated");
 		return -ENOMEM;
 	}
 	number = radix_tree_gang_lookup_tag(root_node, (void **)elements, 0, count, 1);
 	for(i=0; i<number; i++)
 	{
-		printk(KERN_INFO "tagged element is - %d\n", elements[i]->data);
+		printk(KERN_INFO "Tagged element is: %d\n", elements[i]->data);
 	}
 	
 	//remove all nodes in radix tree
+	printk(KERN_INFO "Remove all inserted numbers in the radix\n");
 	for(i=0; i<count;i++)
 	{
-		key = int_str_array[i];
-		radix_tree_delete(root_node, key);
+		value = int_str_array[i];
+		radix_tree_delete(root_node, value);
 		//kfree(root_node);
-		printk(KERN_INFO "removed node from radix tree -%d\n", int_str_array[i]);
+		printk(KERN_INFO "Removed node from radix tree: %d\n", int_str_array[i]);
 	}
 	
 
@@ -382,8 +396,8 @@ int xarray(int *int_str_array, int count)
 {
 	struct xarray *array;
 	struct xarray_data *xarr_data;
-	unsigned long index;
-	int i, number;
+	unsigned long value;
+	int i;
 
 	array = kmalloc(sizeof(*array), GFP_ATOMIC);
 	if(!array)
@@ -395,10 +409,11 @@ int xarray(int *int_str_array, int count)
 	/* initialize array */
 	xa_init(array);
 
-	//insert
+	/* inserting elements into xarray */
+	printk(KERN_INFO "Inserting elements into Xarray\n");
 	for(i=0; i<count; i++)
 	{
-		index = int_str_array[i];
+		value = int_str_array[i];
 		xarr_data = kmalloc(sizeof(*xarr_data), GFP_ATOMIC);
 		if(!xarr_data)
 		{
@@ -406,46 +421,50 @@ int xarray(int *int_str_array, int count)
 			return -ENOMEM;
 		}
 		xarr_data->data = int_str_array[i];
-		number = xa_err(xa_store(array, index, xarr_data, GFP_ATOMIC));
-		printk(KERN_INFO "Inserted into Xarray - %d\n", int_str_array[i]);
+		xa_err(xa_store(array, value, xarr_data, GFP_ATOMIC));
+		printk(KERN_INFO "Inserted element is: %d\n", int_str_array[i]);
 	}
 
 
-	//lookup
+	/*lookup for inserted elements */
+	printk(KERN_INFO "Look up the inserted numbers\n");
 	for(i=0; i<count; i++)
 	{
-		index = int_str_array[i];
-		xarr_data = xa_load(array, index);
-		printk(KERN_INFO "Lookup was succesful in xarray - %d\n", xarr_data->data);
+		value = int_str_array[i];
+		xarr_data = xa_load(array, value);
+		printk(KERN_INFO "Looked up data is: %d\n", xarr_data->data);
 	}
 
 
-	//tag
+	//tag odd elements
+	printk(KERN_INFO "Tag\n");
 	for(i=0; i<count; i++)
 	{
-		index = int_str_array[i];
-		if(index % 2 != 0)
+		value = int_str_array[i];
+		if(value % 2 != 0)
 		{
-			xa_set_mark(array, index, XA_MARK_1);
-			printk(KERN_INFO "Tagging element - %d\n", int_str_array[i]);
+			xa_set_mark(array, value, XA_MARK_1);
+			printk(KERN_INFO "Tagging odd element: %d\n", int_str_array[i]);
 		}
 	}
 
 	
 	//lookup for tagged elements
-	xa_for_each_marked(array, index, xarr_data, XA_MARK_1)
+	printk(KERN_INFO "Tagged Xarray elements\n");
+	xa_for_each_marked(array, value, xarr_data, XA_MARK_1)
 	{
-		printk(KERN_INFO "tagged element in xarray is - %d\n", xarr_data->data);
+		printk(KERN_INFO "Tagged element: %d\n", xarr_data->data);
 	}
 
 
 	//remove all nodes in xarray
+	printk(KERN_INFO "Removing elements from Xarray\n");
 	for(i=0; i<count;i++)
 	{
-		index = int_str_array[i];
-		xa_erase(array, index);
+		value = int_str_array[i];
+		xa_erase(array, value);
 		//kfree(array);
-		printk(KERN_INFO "removed node from xarray -%d\n", int_str_array[i]);
+		printk(KERN_INFO "Removed element: %d\n", int_str_array[i]);
 	}
 	
 
@@ -548,179 +567,17 @@ static int __init kds_init(void)
 	int_str_array[l] = num;
 
 
-	//linked_list(int_str_array, count);
-	//hash_table(int_str_array, count);
+	linked_list(int_str_array, count);
+	hash_table(int_str_array, count);
 	red_black_tree(int_str_array, count);
-	//radix_tree(int_str_array, count);
-	//xarray(int_str_array, count);
-	//bit_map(int_str_array, count);
+	radix_tree(int_str_array, count);
+	xarray(int_str_array, count);
+	bit_map(int_str_array, count);
 
 	kfree(int_str_array);
 
 	return 0;
 }
-
-
-
-
-//			num = num * 10 + j;
-//		}
-//		else
-//		{
-//
-//			//printk("before nodes\n");
-//			int_str_array[l] = num;
-//			l++;
-//			
-//			//printk("number : %d\n", num);
-//			num = 0;
-//		}
-//		//printk("char : %c\n", string_param[i]);
-//		i++;
-//
-//	}
-//	int_str_array[l+1] = num;
-//
-//	//linked_list();
-//	hash_table();
-//	
-//	return 0;
-//	
-//}
-//
-//
-//
-//
-//static DEFINE_HASHTABLE(hashtable, 14);
-//
-///* hash bucket 
-//struct hash_table{
-//	struct hlist_node hash;
-//	int data;
-//};
-//
-//
-//int hash_table(void)
-//{
-//
-//	size_t i = 0;
-//	int num = 0;
-//
-//	struct hash_table *nodes, *current_node;
-//	unsigned bucket;
-//
-//
-//	while(int_str[i] != '\0')
-//	{
-//		if (int_str[i] != ' ')
-//		{
-//			
-//			int j = int_str[i] - '0';
-//			num = num * 10 + j;
-//		}
-//		else
-//		{
-//
-//			//printk("before nodes\n");
-//			nodes = kmalloc(sizeof(*nodes), GFP_KERNEL);
-//			nodes->data = num;
-//			hash_add(hashtable, &nodes->hash, num);
-//			
-//			//printk("number : %d\n", num);
-//			num = 0;
-//		}
-//		//printk("char : %c\n", string_param[i]);
-//		i++;
-//
-//	}
-//
-//
-//	nodes = kmalloc(sizeof(*nodes), GFP_KERNEL);
-//	nodes->data = num;
-//	hash_add(hashtable, &nodes->hash, num);
-//
-//
-//	//printk("last num : %d\n", num);
-//	//printk("length : %ld\n", strlen(int_str));
-//	//printk("read successful!! \n");
-//	
-//	
-//	printk(KERN_INFO "Iterating over a hash table\n");
-//	hash_for_each(hashtable, bucket, current_node, hash)
-//	{
-//		printk(KERN_INFO "Hash node value is %d\n", current_node->data);
-//	}
-//
-//
-//	//size_t i = 0;
-//	//int num = 0;
-//
-//
-//	while(int_str[i] != '\0')
-//	{
-//		if (int_str[i] != ' ')
-//		{
-//			
-//			int j = int_str[i] - '0';
-//			num = num * 10 + j;
-//		}
-//		else
-//		{
-//
-//			//printk("before nodes\n");
-//			nodes = kmalloc(sizeof(*nodes), GFP_KERNEL);
-//			hash_for_each_possible(hashtable, current_node, hash, num)
-//			{
-//				if (current_node->data == num)
-//				{
-//					printk(KERN_INFO "Lookup for data = %d\n", current_node->data);
-//				}
-//			}
-//			
-//			//printk("number : %d\n", num);
-//			num = 0;
-//		}
-//		//printk("char : %c\n", string_param[i]);
-//		i++;
-//
-//	}
-//
-//
-//	nodes = kmalloc(sizeof(*nodes), GFP_KERNEL);
-//	hash_for_each_possible(hashtable, current_node, hash, num)
-//	{
-//		if (current_node->data == num)
-//		{
-//			printk(KERN_INFO "Lookup for data = %d\n", current_node->data);
-//		}
-//	}
-//
-//
-//	//printk("last num : %d\n", num);
-//	//printk("length : %ld\n", strlen(int_str));
-//	//printk("read successful!! \n");
-//	
-//	
-//	//printk(KERN_INFO "Iterating over a hash table\n");
-//
-//
-//	/*list_for_each_entry_safe(current_node, next_node, &head_list, list)
-//	{
-//		printk("Removing node from linked list - %d\n", current_node->data);
-//		list_del(&current_node->list);
-//		kfree(current_node);
-//	}
-//	
-//
-//	return 0;
-//	
-//
-//
-//
-//}
-//
-
-
 
 static void __exit kds_exit(void)
 {
