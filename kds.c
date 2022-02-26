@@ -563,7 +563,7 @@ static int __init kds_init(void)
 
 	int_str_array[l] = num;
 	printk("Input number is: %d\n", num);
-	/*	
+		
 	printk(KERN_INFO "Linked list implementation\n");
 	linked_list(int_str_array, count);
 	
@@ -583,7 +583,7 @@ static int __init kds_init(void)
 	
 	printk(KERN_INFO "Xarray implementation\n");
 	xarray(int_str_array, count);
-	*/
+	
 	
 	printk(KERN_INFO "Bit map implementation\n");
 	bit_map(int_str_array, count);
