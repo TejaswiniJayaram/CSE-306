@@ -563,24 +563,31 @@ static int __init kds_init(void)
 
 	int_str_array[l] = num;
 	printk("Input number is: %d\n", num);
-
+	/*	
 	printk(KERN_INFO "Linked list implementation\n");
 	linked_list(int_str_array, count);
 	
+	
 	printk(KERN_INFO "Hash table implementation\n");
 	hash_table(int_str_array, count);
-
+	
+	
 	printk(KERN_INFO "Red black tree implementation\n");
 	red_black_tree(int_str_array, count);
+	
 	
 	printk(KERN_INFO "Radix tree implementation\n");
 	radix_tree(int_str_array, count);
 	
+
+	
 	printk(KERN_INFO "Xarray implementation\n");
 	xarray(int_str_array, count);
+	*/
 	
 	printk(KERN_INFO "Bit map implementation\n");
 	bit_map(int_str_array, count);
+	
 
 	kfree(int_str_array);
 
